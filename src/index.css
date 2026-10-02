@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "IBM Plex Sans", ui-sans-serif, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+  --color-ink: #1c1b19;
+  --color-muted: #5e594f;
+  --color-paper: #e6e2da;
+  --color-panel: #f6f4f0;
+  --color-line: #d3cdc3;
+  --color-copper: #8d4312;
+  --color-copper-soft: #f4e7dc;
+  --color-ok: #1c6842;
+  --color-ok-soft: #e4f2ea;
+  --color-warn: #8a5a08;
+  --color-warn-soft: #f8f1dc;
+  --color-bad: #8c2f2c;
+  --color-bad-soft: #f8e8e6;
+  --color-header: #1b1a18;
+  --color-studio: #d9d4cc;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-copper);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: #efd3bc;
+}
+
+.panel-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #c9c2b6 transparent;
+}
+
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--color-copper);
+  height: 1.4rem;
+}
+
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
