@@ -39,6 +39,7 @@ const proposedRuleSchema = z
   .strict();
 
 export function extractJson(text: string): unknown {
+  if (text.length > 20_000) throw new Error("response too large");
   const trimmed = text.trim();
   const fenced = /^```(?:json)?\s*([\s\S]*?)```$/.exec(trimmed);
   const body = fenced?.[1] ?? trimmed;

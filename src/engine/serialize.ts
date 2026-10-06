@@ -2,16 +2,18 @@ import { z } from "zod";
 import type { Configuration, ConfigurationDocument } from "./types.ts";
 import { CONFIGURATION_VERSION } from "./types.ts";
 
+const finiteNumber = z.number().finite();
+
 const configurationSchema = z
   .object({
-    bayCount: z.number(),
-    bayWidth: z.number(),
-    shelfDepth: z.number(),
-    overallHeight: z.number(),
-    shelfCount: z.number(),
+    bayCount: finiteNumber,
+    bayWidth: finiteNumber,
+    shelfDepth: finiteNumber,
+    overallHeight: finiteNumber,
+    shelfCount: finiteNumber,
     frameMaterial: z.enum(["steel", "reinforced-steel"]),
     shelfMaterial: z.enum(["steel", "timber"]),
-    loadRating: z.number(),
+    loadRating: finiteNumber,
     bracing: z.enum(["standard", "heavy-duty"]),
     accessories: z
       .object({

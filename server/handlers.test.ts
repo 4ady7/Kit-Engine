@@ -28,6 +28,18 @@ describe("configuration API", () => {
     expect(again.parameters).toEqual(defaultConfiguration);
   });
 
+  it("rejects a non-finite dimension instead of storing infinity", async () => {
+    const repository = new MemoryRepository();
+    const document = serializeConfiguration(defaultConfiguration);
+    const body = JSON.stringify(document).replace(`"bayWidth":${defaultConfiguration.bayWidth}`, `"bayWidth":1e309`);
+    const response = await routeApi(new Request("http://kit.local/api/configurations", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body,
+    }), repository);
+    expect(response?.status).toBe(400);
+  });
+
   it("rejects a malformed configuration and an unknown id", async () => {
     const repository = new MemoryRepository();
     const bad = await routeApi(post("/api/configurations", { version: 1, parameters: {} }), repository);

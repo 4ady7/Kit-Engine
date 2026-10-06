@@ -22,7 +22,8 @@ const LABEL_RAIL_EACH = 8;
 const SAFETY_BACK_PER_BAY_METRE = 36;
 
 function pounds(value: number): number {
-  return Math.round(value);
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.round(value));
 }
 
 export function priceConfiguration(config: Configuration, derived: DerivedValues): PriceBreakdown {

@@ -96,7 +96,8 @@ export function buildLayout(config: Configuration): SystemLayout {
   const origin = -width / 2;
   const clearWidth = Math.max(0.05, bayWidth - section);
   const shelfDepth = Math.max(0.05, depth - 0.04);
-  const pitchM = shelfPitchMm(config.overallHeight, shelfCount) / 1000;
+  const pitchCount = Number.isFinite(config.shelfCount) ? config.shelfCount : shelfCount;
+  const pitchM = shelfPitchMm(config.overallHeight, pitchCount) / 1000;
   const bottom = SHELF_CLEARANCE_MM.bottom / 1000;
 
   const uprights: UprightLayout[] = [];

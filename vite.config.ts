@@ -10,5 +10,3 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "server/**/*.test.ts"],
   },
 });
-
-hii 

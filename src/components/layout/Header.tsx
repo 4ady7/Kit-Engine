@@ -10,6 +10,7 @@ interface HeaderProps {
   canUndo: boolean;
   canRedo: boolean;
   saving: boolean;
+  pendingLabel?: string | null;
   onTitle: (title: string) => void;
   onUndo: () => void;
   onRedo: () => void;
@@ -30,6 +31,7 @@ export function Header({
   canUndo,
   canRedo,
   saving,
+  pendingLabel = null,
   onTitle,
   onUndo,
   onRedo,
@@ -52,9 +54,9 @@ export function Header({
         />
       </label>
       <p className="font-mono text-[12px] text-white/70">{displayConfigurationId(configurationId)}</p>
-      <p className={`px-2 py-1 font-mono text-[11px] tracking-wide ${STATUS_CLASS[status.code]}`} aria-live="polite">
-        {status.label}
-        <span className="sr-only">. {status.detail}</span>
+      <p className={`px-2 py-1 font-mono text-[11px] tracking-wide ${pendingLabel ? "bg-white/10 text-panel" : STATUS_CLASS[status.code]}`} aria-live="polite">
+        {pendingLabel ?? status.label}
+        <span className="sr-only">. {pendingLabel ? "The shared configuration is not on screen yet." : status.detail}</span>
       </p>
       <div className="flex items-center gap-1">
         <button type="button" className="border border-white/20 p-2 disabled:opacity-40" aria-label="Undo" disabled={!canUndo} onClick={onUndo}>

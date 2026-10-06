@@ -43,6 +43,7 @@ interface ConfigurationState {
   future: Configuration[];
   gestureBase: Configuration | null;
   customRules: Rule[];
+  rulesEpoch: number;
   configurationId: string | null;
   title: string;
   savedSignature: string | null;
@@ -70,6 +71,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
     future: [],
     gestureBase: null,
     customRules: loadLocalRules(),
+    rulesEpoch: 0,
     configurationId: null,
     title: "Standard warehouse",
     savedSignature: null,
@@ -92,16 +94,17 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
     setParameter: (key, value, mode) => {
       const next = applyValue(get().config, key, value);
       if (!next || sameConfiguration(next, get().config)) return;
-      if (mode === "live" && get().gestureBase) {
+      const { gestureBase, config } = get();
+      if (mode === "live" && gestureBase) {
         set({ config: next });
         return;
       }
-      set({
-        config: next,
-        past: pushHistory(get().config),
-        future: [],
-        gestureBase: null,
-      });
+      let past = get().past;
+      if (gestureBase && !sameConfiguration(gestureBase, config)) {
+        past = [...past, cloneConfiguration(gestureBase)].slice(-HISTORY_LIMIT);
+      }
+      past = [...past, cloneConfiguration(config)].slice(-HISTORY_LIMIT);
+      set({ config: next, past, future: [], gestureBase: null });
     },
 
     undo: () => {
@@ -165,7 +168,7 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
 
     setCustomRules: (rules) => {
       saveLocalRules(rules);
-      set({ customRules: rules });
+      set({ customRules: rules, rulesEpoch: get().rulesEpoch + 1 });
     },
 
     addCustomRule: (rule) => {
@@ -173,14 +176,14 @@ export const useConfigurationStore = create<ConfigurationState>((set, get) => {
       if (taken) return false;
       const customRules = [...get().customRules, rule];
       saveLocalRules(customRules);
-      set({ customRules });
+      set({ customRules, rulesEpoch: get().rulesEpoch + 1 });
       return true;
     },
 
     removeCustomRule: (id) => {
       const customRules = get().customRules.filter((rule) => rule.id !== id);
       saveLocalRules(customRules);
-      set({ customRules });
+      set({ customRules, rulesEpoch: get().rulesEpoch + 1 });
     },
   };
 });
@@ -195,4 +198,29 @@ export function selectDirty(state: {
 
 export function selectCanUndo(state: { past: Configuration[]; gestureBase: Configuration | null }): boolean {
   return state.past.length > 0 || state.gestureBase !== null;
+}
+
+export function saveMatchesScreen(
+  saved: Configuration,
+  savedTitle: string,
+  current: Configuration,
+  currentTitle: string,
+): boolean {
+  return sameConfiguration(saved, current) && savedTitle === currentTitle;
+}
+
+/**
+ * A rule-list response is applied only if nothing changed locally after the
+ * request started. Otherwise a slow response can put a deleted rule back.
+ */
+export function mergeRemoteRules(
+  local: readonly Rule[],
+  remote: readonly Rule[],
+  epochAtRequest: number,
+  epochNow: number,
+): Rule[] | null {
+  if (epochAtRequest !== epochNow) return null;
+  const merged = new Map(local.map((rule) => [rule.id, rule]));
+  for (const rule of remote) merged.set(rule.id, rule);
+  return [...merged.values()];
 }

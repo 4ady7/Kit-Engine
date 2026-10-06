@@ -1,3 +1,4 @@
+import { contradictionIssues } from "./contradictions.ts";
 import { derive } from "./derivedValues.ts";
 import { issueFromRule } from "./explanations.ts";
 import { describeFix, formatParameterValue } from "./format.ts";
@@ -121,7 +122,10 @@ export function compileRuleSource(source: string): { rules: Rule[]; errors: stri
   const rules: Rule[] = [];
   const seen = new Set<string>();
   for (const rule of parsed.rules) {
-    if (seen.has(rule.id)) errors.push(`Duplicate rule id "${rule.id}".`);
+    if (seen.has(rule.id)) {
+      errors.push(`Duplicate rule id "${rule.id}".`);
+      continue;
+    }
     seen.add(rule.id);
     const semantic = semanticErrors(rule);
     if (semantic.length > 0) errors.push(...semantic);
@@ -173,7 +177,31 @@ function rangeIssues(config: Configuration): ValidationIssue[] {
   for (const spec of PARAMETERS) {
     if (!spec.settable || spec.kind === "enum" || spec.kind === "boolean") continue;
     const value = readParameter(config, spec.key);
-    if (typeof value !== "number" || !Number.isFinite(value)) continue;
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      issues.push({
+        id: `parameter-range:${spec.key}`,
+        ruleId: `parameter-range:${spec.key}`,
+        severity: "error",
+        parameter: spec.key,
+        parameterLabel: spec.label,
+        message: `${spec.label} must be a finite number.`,
+        explanation: "The rules engine does not evaluate infinity or missing numbers as a real dimension.",
+        suggestion: `Enter a finite ${spec.label.toLowerCase()} inside the allowed range.`,
+        current: "Not a finite number",
+        limitLabel: "Required",
+        limit: "Finite number",
+        fixes: spec.min !== undefined
+          ? [{ parameter: spec.key, value: spec.min, label: describeFix(spec.key, spec.min) }]
+          : [],
+        trace: {
+          ruleId: `parameter-range:${spec.key}`,
+          inputs: [{ parameter: spec.key, label: spec.label, value: "Not a finite number" }],
+          constraint: `${spec.label} is a finite number`,
+          result: "fail",
+        },
+      });
+      continue;
+    }
     const below = spec.min !== undefined && value < spec.min;
     const above = spec.max !== undefined && value > spec.max;
     const fractional = spec.kind === "integer" && !Number.isInteger(value);
@@ -249,13 +277,19 @@ export function evaluate(config: Configuration, rules: readonly Rule[] = builtin
     errors.push(issue);
   }
 
+  const engaged: Rule[] = [];
   for (const rule of rules) {
     if (!ruleApplies(rule, context)) continue;
+    engaged.push(rule);
     engagedRuleIds.push(rule.id);
     if (predicateHolds(rule.then, context)) continue;
     const issue = issueFromRule(rule, context);
     if (issue.severity === "warning") warnings.push(issue);
     else errors.push(issue);
+  }
+
+  for (const issue of contradictionIssues(engaged)) {
+    errors.push(issue);
   }
 
   return {

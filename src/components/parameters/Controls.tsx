@@ -60,6 +60,11 @@ export function NumberParameter({ parameter, label, description, unit, min, max,
             dragging.current = false;
             endGesture();
           }}
+          onLostPointerCapture={() => {
+            if (!dragging.current) return;
+            dragging.current = false;
+            endGesture();
+          }}
           onChange={(event) => {
             const next = Number(event.target.value);
             if (!Number.isFinite(next)) return;
